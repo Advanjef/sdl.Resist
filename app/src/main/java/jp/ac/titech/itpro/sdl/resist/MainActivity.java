@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -16,6 +17,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private RotationView rotationView;
     private SensorManager manager;
     private Sensor gyroscope;
+
+    private float currentRotation = 0;
+    private long previousTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +59,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onSensorChanged(SensorEvent event) {
         float omegaZ = event.values[2];  // z-axis angular velocity (rad/sec)
         // TODO: calculate right direction that cancels the rotation
-        rotationView.setDirection(omegaZ);
+        if (previousTime == 0) {
+            previousTime = event.timestamp;
+            return;
+        }
+        long timeDelta = event.timestamp - previousTime;
+        float rotation = currentRotation + omegaZ * ((float) timeDelta / 1_000_000_000);
+        rotationView.setDirection(rotation);
+        currentRotation = rotation;
+        previousTime = event.timestamp;
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         Log.d(TAG, "onAccuracyChanged: accuracy=" + accuracy);
     }
+
 }
